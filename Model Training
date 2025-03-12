@@ -1,0 +1,68 @@
+from sklearn.preprocessing import StandardScaler
+
+def extract_features(X):
+    """Standardize features by removing the mean and scaling to unit variance."""
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+    return X_scaled
+
+if __name__ == "__main__":
+    from preprocessing import preprocess_data
+    data_path = "data/UCI HAR Dataset"
+    X, y = preprocess_data(data_path)
+    X_scaled = extract_features(X)
+    print("Feature extraction complete. Shape of X_scaled:", X_scaled.shape)
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
+import numpy as np
+
+def train_random_forest(X, y):
+    """Train a Random Forest classifier."""
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"Random Forest Accuracy: {accuracy:.4f}")
+
+def train_lstm(X, y):
+    """Train an LSTM model."""
+    # Reshape data for LSTM (samples, timesteps, features)
+    X = X.reshape((X.shape[0], 1, X.shape[1]))
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Convert labels to one-hot encoding
+    y_train = tf.keras.utils.to_categorical(y_train - 1, num_classes=6)
+    y_test = tf.keras.utils.to_categorical(y_test - 1, num_classes=6)
+
+    # Build LSTM model
+    model = Sequential()
+    model.add(LSTM(64, input_shape=(X_train.shape[1], X_train.shape[2])))
+    model.add(Dropout(0.5))
+    model.add(Dense(64, activation="relu"))
+    model.add(Dense(6, activation="softmax"))
+
+    model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+    model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
+
+    # Evaluate model
+    loss, accuracy = model.evaluate(X_test, y_test)
+    print(f"LSTM Accuracy: {accuracy:.4f}")
+
+if __name__ == "__main__":
+    from preprocessing import preprocess_data
+    from feature_extraction import extract_features
+
+    data_path = "data/UCI HAR Dataset"
+    X, y = preprocess_data(data_path)
+    X_scaled = extract_features(X)
+
+    print("Training Random Forest...")
+    train_random_forest(X_scaled, y)
+
+    print("Training LSTM...")
+    train_lstm(X_scaled, y)
