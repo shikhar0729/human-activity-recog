@@ -1,0 +1,29 @@
+import os
+import pandas as pd
+import numpy as np
+
+def load_data(data_path, file):
+    """Load data from a file."""
+    return pd.read_csv(os.path.join(data_path, file), delim_whitespace=True, header=None)
+
+def preprocess_data(data_path):
+    """Preprocess the UCI HAR dataset."""
+    # Load training and test data
+    X_train = load_data(data_path, "train/X_train.txt")
+    y_train = load_data(data_path, "train/y_train.txt")
+    X_test = load_data(data_path, "test/X_test.txt")
+    y_test = load_data(data_path, "test/y_test.txt")
+
+    # Combine data
+    X = pd.concat([X_train, X_test], axis=0)
+    y = pd.concat([y_train, y_test], axis=0)
+
+    # Flatten labels
+    y = y.values.flatten()
+
+    return X, y
+
+if __name__ == "__main__":
+    data_path = "data/UCI HAR Dataset"
+    X, y = preprocess_data(data_path)
+    print("Data preprocessing complete. Shape of X:", X.shape, "Shape of y:", y.shape)
